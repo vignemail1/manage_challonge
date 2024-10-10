@@ -5,6 +5,7 @@ import sys
 import argparse
 import time
 import pytz
+import json
 from datetime import datetime
 import requests
 from dotenv import load_dotenv
@@ -72,7 +73,7 @@ def delete_tournaments_by_urls(urls):
     print(f"{deleted_count} tournois supprimés avec succès.")
 
 
-def create_tournament(name, tournament_type):
+def create_tournament(name, tournament_type, generate_participants=0):
     data = {
         'tournament': {
             'name': name,
@@ -85,6 +86,10 @@ def create_tournament(name, tournament_type):
     }
     response = make_request('POST', 'tournaments', data)
     print(f"Tournoi créé : {response['tournament']['full_challonge_url']}")
+    
+    if generate_participants > 0:
+        generate_and_add_participants(response['tournament']['url'], generate_participants)
+        
     return response['tournament']['id']
 
 def add_participants(tournament_id, participants):
@@ -113,31 +118,49 @@ def set_custom_round_labels(tournament_id):
     make_request('PUT', f"tournaments/{tournament_id}", data)
     print("Labels de tour personnalisés ajoutés.")
 
-def list_tournaments(date=None, participants_count=None, short=False, full_url=False):
+def list_tournaments(date=None, participants_count=None, short=False, full_url=False, json_output=False, full_json=False):
     tournaments = make_request('GET', 'tournaments')
     filtered_tournaments = []
     
     for tournament in tournaments:
         created_at_utc = datetime.fromisoformat(tournament['tournament']['created_at'].replace('Z', '+00:00'))
-        created_at_paris = created_at_utc.astimezone(TIMEZONE)
+        created_at_timezone = created_at_utc.astimezone(TIMEZONE)
         
-        if (date is None or created_at_paris.date() >= date) and \
+        if (date is None or created_at_timezone.date() >= date) and \
            (participants_count is None or tournament['tournament']['participants_count'] == participants_count):
-            if short:
+            tournament_data = {
+                'url': tournament['tournament']['url'],
+                'full_url': tournament['tournament']['full_challonge_url'],
+                'title': tournament['tournament']['name'],
+                'tournament_type': tournament['tournament']['tournament_type'],
+                'created_at': created_at_timezone.isoformat(),
+                'participants_count': tournament['tournament']['participants_count']
+            }
+            
+            if full_json:
+                participants = make_request('GET', f"tournaments/{tournament['tournament']['url']}/participants")
+                tournament_data['participants'] = [
+                    {'name': p['participant']['name'], 'seed': p['participant']['seed']}
+                    for p in participants
+                ]
+            
+            if json_output:
+                filtered_tournaments.append(tournament_data)
+            elif short:
                 filtered_tournaments.append(tournament['tournament']['url'])
             else:
-                tournament_data = [
+                filtered_tournaments.append([
                     tournament['tournament']['url'],
                     tournament['tournament']['name'],
                     tournament['tournament']['tournament_type'],
-                    created_at_paris.strftime('%Y-%m-%d %H:%M:%S %Z'),
-                    tournament['tournament']['participants_count']
-                ]
-                if full_url:
-                    tournament_data.append(tournament['tournament']['full_challonge_url'])
-                filtered_tournaments.append(tournament_data)
+                    created_at_timezone.strftime('%Y-%m-%d %H:%M:%S %Z'),
+                    tournament['tournament']['participants_count'],
+                    tournament['tournament']['full_challonge_url'] if full_url else ''
+                ])
     
-    if short:
+    if json_output:
+        print(json.dumps(filtered_tournaments, indent=2))
+    elif short:
         print("\n".join(filtered_tournaments))
     elif filtered_tournaments:
         headers = ["URL", "Titre", "Type de tournoi", "Date de création", "Nombre de participants"]
@@ -164,9 +187,16 @@ def toggle_tournament_type(tournament_url):
 def randomize_participants(tournament_url):
     make_request('POST', f"tournaments/{tournament_url}/participants/randomize")
     print("Les participants du tournoi ont été mélangés aléatoirement.")
-    
+
+def generate_and_add_participants(tournament_url, count):
+    participants = [f"Team{i:03d}" for i in range(1, count + 1)]
+    data = {'participants': [{'name': p} for p in participants]}
+    make_request('POST', f"tournaments/{tournament_url}/participants/bulk_add", data)
+    print(f"{count} participants générés et ajoutés au tournoi.")
+
 def create_parser():
     parser = argparse.ArgumentParser(description="Gestion des tournois Challonge")
+    parser.add_argument('--timezone', help="Fuseau horaire à utiliser (par défaut: celui spécifié dans .env ou Europe/Paris)")
     subparsers = parser.add_subparsers(dest='action', required=True, help='Action à effectuer')
 
     # Commande : list
@@ -175,6 +205,8 @@ def create_parser():
     list_parser.add_argument('--participants_count', type=int, help="Filtrer par nombre de participants")
     list_parser.add_argument('--short', action='store_true', help="Afficher uniquement les URLs des tournois")
     list_parser.add_argument('--fullurl', action='store_true', help="Ajouter l'URL complète en dernière colonne")
+    list_parser.add_argument('--json', action='store_true', help="Sortie au format JSON")
+    list_parser.add_argument('--full_json', action='store_true', help="Sortie JSON complète avec liste des participants")
 
     # Commande : delete
     delete_parser = subparsers.add_parser('delete', help='Supprimer les tournois')
@@ -185,10 +217,12 @@ def create_parser():
     # Commande : create_single
     create_single_parser = subparsers.add_parser('create_single', help='Créer un tournoi à élimination simple')
     create_single_parser.add_argument('--name', required=True, help="Nom du tournoi")
+    create_single_parser.add_argument('--generate_participants', type=int, default=0, help="Nombre de participants à générer automatiquement")
 
     # Commande : create_double
     create_double_parser = subparsers.add_parser('create_double', help='Créer un tournoi à double élimination')
     create_double_parser.add_argument('--name', required=True, help="Nom du tournoi")
+    create_double_parser.add_argument('--generate_participants', type=int, default=0, help="Nombre de participants à générer automatiquement")
 
     # Commande : add_participants
     add_participants_parser = subparsers.add_parser('add_participants', help='Ajouter des participants à un tournoi')
@@ -212,10 +246,15 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
+    
+    # Configurer le fuseau horaire s'il est spécifié en ligne de commande
+    global TIMEZONE
+    if args.timezone:
+        TIMEZONE = pytz.timezone(args.timezone)
 
     if args.action == 'list':
         date = datetime.fromisoformat(args.date).date() if args.date else None
-        list_tournaments(date, args.participants_count, args.short, args.fullurl)
+        list_tournaments(date, args.participants_count, args.short, args.fullurl, args.json, args.full_json)
     elif args.action == 'delete':
         if args.date:
             date = datetime.fromisoformat(args.date).date()

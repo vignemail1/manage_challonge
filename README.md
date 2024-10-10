@@ -68,7 +68,7 @@ Ce script Python permet de gérer les tournois sur Challonge via leur API.
 1. Créez un fichier `.env` dans le même répertoire que le script
 2. Ajoutez votre clé API dans ce fichier :
 
-   ```shell
+   ```ini
    CHALLONGE_API_KEY=votre_clé_api_ici
    ```
 
@@ -91,34 +91,118 @@ python challonge.py --help
 ### Lister les tournois
 
 ```shell
-# challonge.py list [-h] [--date DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--fullurl]
+# challonge.py list [-h] [--date DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--fullurl] [--json [--full_json]]
 
 # Lister les tournois
-$ python challonge.py list
+python challonge.py list
+```
+
+```text
 +----------+---------+--------------------+--------------------------+--------------------------+
 | URL      | Titre   | Type de tournoi    | Date de création         |   Nombre de participants |
 +==========+=========+====================+==========================+==========================+
 | bbkdcbam | Test 01 | single elimination | 2024-10-10 14:37:33 CEST |                        3 |
 +----------+---------+--------------------+--------------------------+--------------------------+
+```
 
+```shell
+# Liste les tournois au format JSON
+python challonge.py list --json
+```
+
+```json
+[
+  {
+    "url": "bbkdcbam",
+    "full_url": "https://challonge.com/bbkdcbam",
+    "title": "Test 01",
+    "tournament_type": "single elimination",
+    "created_at": "2024-10-10T14:37:33.902000+02:00",
+    "participants_count": 3
+  },
+  {
+    "url": "41bhwup4",
+    "full_url": "https://challonge.com/41bhwup4",
+    "title": "Test 12 teams",
+    "tournament_type": "single elimination",
+    "created_at": "2024-10-10T15:23:50.829000+02:00",
+    "participants_count": 0
+  }
+]
+```
+
+```shell
+# Liste les tournois au format JSON
+python challonge.py list --json --full_json
+```
+
+```json
+[
+  {
+    "url": "bbkdcbam",
+    "full_url": "https://challonge.com/bbkdcbam",
+    "title": "Test 01",
+    "tournament_type": "single elimination",
+    "created_at": "2024-10-10T14:37:33.902000+02:00",
+    "participants_count": 3,
+    "participants": [
+      {
+        "name": "Unreal x Marco",
+        "seed": 1
+      },
+      {
+        "name": "Druide x Klarika",
+        "seed": 2
+      },
+      {
+        "name": "vignemail1 x Hope",
+        "seed": 3
+      }
+    ]
+  },
+  {
+    "url": "41bhwup4",
+    "full_url": "https://challonge.com/41bhwup4",
+    "title": "Test 12 teams",
+    "tournament_type": "single elimination",
+    "created_at": "2024-10-10T15:23:50.829000+02:00",
+    "participants_count": 0,
+    "participants": []
+  }
+]
+```
+
+```shell
 # Lister les tournois
-$ python challonge.py list --fullurl
+python challonge.py list --fullurl
+```
+
+```text
 +----------+---------+--------------------+--------------------------+--------------------------+--------------------------------+
 | URL      | Titre   | Type de tournoi    | Date de création         |   Nombre de participants | URL complète                   |
 +==========+=========+====================+==========================+==========================+================================+
 | bbkdcbam | Test 01 | single elimination | 2024-10-10 14:37:33 CEST |                        3 | https://challonge.com/bbkdcbam |
 +----------+---------+--------------------+--------------------------+--------------------------+--------------------------------+
+```
 
+```shell
 # Lister les tournois depuis une date
-$ python challonge.py list --date 2024-09-01
+python challonge.py list --date 2024-09-01
+```
 
+```text
 +---------+--------------------+----------------------------+--------------------------+
 | Titre   | Type de tournoi    | Date de création (Paris)   |   Nombre de participants |
 +=========+====================+============================+==========================+
 | Test 01 | single elimination | 2024-10-10 14:37:33 CEST   |                        0 |
 +---------+--------------------+----------------------------+--------------------------+
+```
 
-$ python challonge.py list --short --date 2024-09-01
+```shell
+python challonge.py list --short --date 2024-09-01
+```
+
+```text
 bbkdcbam
 ```
 
@@ -129,7 +213,13 @@ bbkdcbam
 
 # Tous les tournois à partir d'une date
 python challonge.py delete --date 2024-09-01
+```
 
+```text
+2 tournois supprimés avec succès.
+```
+
+```shell
 # Les tournois spécifiés par leur fin d'url
 python challonge.py delete --urls bbkdcbam
 ```
@@ -137,31 +227,51 @@ python challonge.py delete --urls bbkdcbam
 ### Créer un tournoi à élimination simple
 
 ```shell
-# usage: challonge.py create_single [-h] --name NAME
-$ python challonge.py create_single --name "Switcharoo"
+# usage: challonge.py create_single [-h] --name NAME [--generate_participants GENERATE_PARTICIPANTS]
+python challonge.py create_single --name "Switcharoo"
+```
+
+```text
 Tournoi créé : https://challonge.com/bbkdcbam
+Labels de tour personnalisés ajoutés.
+```
+
+```shell
+python challonge.py create_single --name "Test 12 teams" --generate_participants 12
+```
+
+```text
+Tournoi créé : https://challonge.com/41bhwup4
 Labels de tour personnalisés ajoutés.
 ```
 
 ### Créer un tournoi à double élimination
 
 ```shell
-# usage: challonge.py create_double [-h] --name NAME
+# usage: challonge.py create_double [-h] --name NAME [--generate_participants GENERATE_PARTICIPANTS]
 python challonge.py create_double --name "Switcharoo"
+python challonge.py create_double --name "Test 8 teams" --generate_participants 8
 ```
 
 ### Ajouter des participants à un tournoi
 
 ```shell
 # usage: challonge.py add_participants [-h] --tournament_id TOURNAMENT_ID --participants PARTICIPANTS [PARTICIPANTS ...]
-$ python challonge.py add_participants --tournament_id bbkdcbam --participants "player1 x player2" "player3 x player4" "player5 x player6" "player7 x player8"
+python challonge.py add_participants --tournament_id bbkdcbam --participants "player1 x player2" "player3 x player4" "player5 x player6" "player7 x player8"
+```
+
+```text
+Participants ajoutés avec succès.
 ```
 
 ### Supprimer tous les participants d'un tournoi
 
 ```shell
 # usage: challonge.py remove_participants [-h] --tournament_id TOURNAMENT_ID
-$ python challonge.py remove_participants --tournament_id bbkdcbam
+python challonge.py remove_participants --tournament_id bbkdcba
+```
+
+```text
 Tous les participants ont été supprimés.
 ```
 
@@ -169,13 +279,28 @@ Tous les participants ont été supprimés.
 
 ```shell
 # usage: challonge.py toggle_type [-h] --url URL
+python challonge.py toggle_type --url bbkdcbam
+```
 
-$ python challonge.py toggle_type --url bbkdcbam
+```text
+Le type du tournoi a été changé de single elimination à double elimination.
+```
+
+```shell
+python challonge.py toggle_type --url bbkdcbam
+```
+
+```text
+Le type du tournoi a été changé de double elimination à single elimination.
 ```
 
 ### Mélanger la liste des participants
 
 ```shell
 # usage: challonge.py randomize [-h] --url URL
-$ python challonge.py randomize --url bbkdcbam
+python challonge.py randomize --url bbkdcbam
+```
+
+```text
+Les participants du tournoi ont été mélangés aléatoirement.
 ```

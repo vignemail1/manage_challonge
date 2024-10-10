@@ -73,12 +73,12 @@ def delete_tournaments_by_urls(urls):
     print(f"{deleted_count} tournois supprimés avec succès.")
 
 
-def create_tournament(name, tournament_type, generate_participants=0):
+def create_tournament(name, tournament_type, game_name = 'Call of Duty: Warzone', generate_participants=0):
     data = {
         'tournament': {
             'name': name,
             'tournament_type': tournament_type,
-            'game_name': 'Call of Duty: Warzone',
+            'game_name': game_name,
             'description': 'Created via API',
             'show_rounds': 'true',
             'private': 'false'
@@ -197,6 +197,7 @@ def generate_and_add_participants(tournament_url, count):
 def create_parser():
     parser = argparse.ArgumentParser(description="Gestion des tournois Challonge")
     parser.add_argument('--timezone', help="Fuseau horaire à utiliser (par défaut: celui spécifié dans .env ou Europe/Paris)")
+    parser.add_argument("--game", help="Nom du jeu pour tous les tournois", default="Call of Duty: Warzone")
     subparsers = parser.add_subparsers(dest='action', required=True, help='Action à effectuer')
 
     # Commande : list
@@ -263,7 +264,7 @@ def main():
             delete_tournaments_by_urls(args.urls)
     elif args.action in ['create_single', 'create_double']:
         tournament_type = 'single elimination' if args.action == 'create_single' else 'double elimination'
-        tournament_url = create_tournament(args.name, tournament_type, args.generate_participants)
+        tournament_url = create_tournament(args.name, tournament_type, args.game, args.generate_participants)
         set_custom_round_labels(tournament_url)
     elif args.action == 'add_participants':
         add_participants(args.tournament_id, args.participants)

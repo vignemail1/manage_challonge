@@ -75,7 +75,7 @@ Avec ce script vous pouvez facilement envisager d'automatiser votre gestion de t
 2. Allez dans les paramètres de votre compte
 3. Dans la section "Developer API", copiez la Clé API (v1)
 
-## Création d'un accès pour Google Sheeet (fonction --import-gsheet)
+## Création d'un accès pour Google Sheet (fonction --import-gsheet)
 
 1. Enable the Google Sheets API:
     - Go to the [Google Cloud Console](https://console.cloud.google.com/).
@@ -104,6 +104,16 @@ Avec ce script vous pouvez facilement envisager d'automatiser votre gestion de t
 
     ```ini
     TIMEZONE=Europe/Paris
+    ```
+
+4. (optionnel) si vous souhaitez faire un import depuis un Google Sheet et que vous avez créer votre compte de service, ajoutez les éléments suivants dans le fichier `.env` :
+
+    ```ini
+    GOOGLE_APPLICATION_CREDENTIALS=nom_fichier_credential_service_account.json
+    # pour un document d'url https://docs.google.com/spreadsheets/d/{{GOOGLE_SHEET_ID}}/edit?gid=0#gid=0
+    GOOGLE_SHEET_ID={{GOOGLE_SHEET_ID}}
+    GOOGLE_SHEET_WORKSHEET=feuille_dans_sheet
+    GOOGLE_SHEET_RANGE=plage_style_A2:A33
     ```
 
 ## Utilisation du script

@@ -15,7 +15,7 @@ from google.oauth2.service_account import Credentials
 
 
 # Charger le token API depuis le fichier .env
-load_dotenv()
+load_dotenv(dotenv_path='env.txt')
 API_KEY = os.getenv('CHALLONGE_API_KEY')
 
 BASE_URL = 'https://api.challonge.com/v1'
@@ -297,10 +297,9 @@ def create_parser():
     # Commande : delete
     delete_parser = subparsers.add_parser('delete', help='Supprimer les tournois')
     delete_group = delete_parser.add_mutually_exclusive_group(required=True)
-    delete_group.add_argument('--urls', nargs='+', help="Liste des URLs des tournois à supprimer")
-    date_group = delete_group.add_argument_group()
-    date_group.add_argument('--start_date', help="Date de début (YYYY-MM-DD) à partir de laquelle supprimer les tournois")
-    date_group.add_argument('--end_date', required=False, help="Date de fin (YYYY-MM-DD) jusqu'à laquelle supprimer les tournois (optionnel)")
+    delete_group.add_argument('--urls', nargs='+', required=False, help="Liste des URLs des tournois à supprimer")
+    delete_group.add_argument('--start_date', help="Date de début (YYYY-MM-DD) à partir de laquelle supprimer les tournois")
+    delete_parser.add_argument('--end_date', required=False, help="Date de fin (YYYY-MM-DD) jusqu'à laquelle supprimer les tournois (optionnel)")
 
     # Commande : create_single
     create_single_parser = subparsers.add_parser('create_single', help='Créer un tournoi à élimination simple')

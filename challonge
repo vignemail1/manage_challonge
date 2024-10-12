@@ -288,12 +288,105 @@ def show_tournament(tournament_url, json_output=False, full_json=False):
         for i, participant in enumerate(details['Participants'], 1):
             print(f"{i}. {participant}")
 
+def generate_completion_script(shell):
+    program_name = os.path.basename(sys.argv[0])
+    
+    completion_script = f"""
+# Autocompletion for {program_name}
+_{program_name}_completion() {{
+    local cur prev opts
+    COMPREPLY=()
+    cur="${{COMP_WORDS[COMP_CWORD]}}"
+    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    opts="list delete create_single generate_completion"
+
+    case "${{prev}}" in
+        list)
+            local list_opts="--start_date --end_date --participants_count --short --full_url --json --full_json --last"
+            COMPREPLY=( $(compgen -W "${{list_opts}}" -- "${{cur}}") )
+            return 0
+            ;;
+        delete)
+            local delete_opts="--urls --start_date --end_date"
+            COMPREPLY=( $(compgen -W "${{delete_opts}}" -- "${{cur}}") )
+            return 0
+            ;;
+        create_single)
+            local create_single_opts="--name --participants"
+            COMPREPLY=( $(compgen -W "${{create_single_opts}}" -- "${{cur}}") )
+            return 0
+            ;;
+        generate_completion)
+            local completion_opts="--shell"
+            COMPREPLY=( $(compgen -W "${{completion_opts}}" -- "${{cur}}") )
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    COMPREPLY=( $(compgen -W "${{opts}}" -- "${{cur}}") )
+    return 0
+}}
+
+complete -F _{program_name}_completion {program_name}
+"""
+
+    if shell == 'zsh':
+        completion_script = f"""#compdef {program_name}
+
+_{program_name}() {{
+    local line state
+
+    _arguments -C \\
+        "1: :(list delete create_single generate_completion)" \\
+        "*::arg:->args"
+
+    case $line[1] in
+        list)
+            _arguments \\
+                "--start_date[Date de début]" \\
+                "--end_date[Date de fin]" \\
+                "--participants_count[Nombre de participants]" \\
+                "--short[Afficher uniquement les URLs]" \\
+                "--full_url[Ajouter l'URL complète]" \\
+                "--json[Sortie au format JSON]" \\
+                "--full_json[Sortie JSON complète]" \\
+                "--last[Retourner le dernier tournoi]"
+            ;;
+        delete)
+            _arguments \\
+                "--urls[Liste des URLs à supprimer]" \\
+                "--start_date[Date de début]" \\
+                "--end_date[Date de fin]"
+            ;;
+        create_single)
+            _arguments \\
+                "--name[Nom du tournoi]" \\
+                "--participants[Nombre de participants]"
+            ;;
+        generate_completion)
+            _arguments \\
+                "--shell[Spécifier le shell]:(bash zsh)"
+            ;;
+    esac
+}}
+
+_{program_name}
+"""
+
+    print(completion_script)
+
 def create_parser():
     parser = argparse.ArgumentParser(description="Gestion des tournois Challonge", epilog="Pour une full URL https://challonge.com/lnacodz7 , url : lnacodz7""")
     parser.add_argument('--timezone', help="Fuseau horaire à utiliser (par défaut: celui spécifié dans .env ou 'Europe/Paris')")
     parser.add_argument("--game", help="Nom du jeu pour tous les tournois", default="Call of Duty: Warzone")
     subparsers = parser.add_subparsers(dest='action', required=True, help='Action à effectuer')
 
+    # Commande: generate_completion
+    completion_parser = subparsers.add_parser('generate_completion', help='Générer un script d\'autocomplétion pour bash et zsh')
+    completion_parser.add_argument('--shell', choices=['bash', 'zsh'], default='bash', help='Spécifier le shell pour lequel générer l\'autocomplétion')
+    
     # Commande : list
     list_parser = subparsers.add_parser('list', help='Lister les tournois')
     list_parser.add_argument('--start_date', help="Date (YYYY-MM-DD) à partir de laquelle lister les tournois")
@@ -405,6 +498,8 @@ def main():
         randomize_participants(args.url)
     elif args.action == 'show':
         show_tournament(args.url, args.json, args.full_json)
+    elif args.action == 'generate_completion':
+        generate_completion_script(args.shell)
 
 if __name__ == "__main__":
     main()

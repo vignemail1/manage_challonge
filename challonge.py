@@ -158,13 +158,21 @@ def set_custom_round_labels(tournament_url):
     make_request('PUT', f"tournaments/{tournament_url}", data)
     print("Labels de tour personnalisés ajoutés.")
 
-def list_tournaments(start_date=None, end_date=None, participants_count=None, short=False, full_url=False, json_output=False, full_json=False):
+def list_tournaments(start_date=None, end_date=None, participants_count=None, short=False, full_url=False, json_output=False, full_json=False, last=False):
     tournaments = make_request('GET', 'tournaments')
     filtered_tournaments = []
 
     if end_date is None:
         end_date = datetime.now(TIMEZONE).date()
-
+    tournaments.sort(key=lambda x: x["tournament"]["created_at"], reverse=True)
+    if last:
+        t = tournaments[0]
+        if short:
+            print(t['tournament']['url'])
+        else:
+            print(json.dumps(t, indent=2))
+        sys.exit(0)
+    
     for tournament in tournaments:
         created_at_utc = datetime.fromisoformat(tournament['tournament']['created_at'].replace('Z', '+00:00'))
         created_at_timezone = created_at_utc.astimezone(TIMEZONE)
@@ -175,11 +183,11 @@ def list_tournaments(start_date=None, end_date=None, participants_count=None, sh
 
             tournament_data = {
                 'url': tournament['tournament']['url'],
-                'full_url': tournament['tournament']['full_challonge_url'],
                 'title': tournament['tournament']['name'],
                 'tournament_type': tournament['tournament']['tournament_type'],
                 'created_at': created_at_timezone.isoformat(),
-                'participants_count': tournament['tournament']['participants_count']
+                'participants_count': tournament['tournament']['participants_count'],
+                'full_url': tournament['tournament']['full_challonge_url']
             }
             
             if full_json:
@@ -194,24 +202,26 @@ def list_tournaments(start_date=None, end_date=None, participants_count=None, sh
             elif short:
                 filtered_tournaments.append(tournament['tournament']['url'])
             else:
-                filtered_tournaments.append([
+                item = [
                     tournament['tournament']['url'],
                     tournament['tournament']['name'],
                     tournament['tournament']['tournament_type'],
                     created_at_timezone.strftime('%Y-%m-%d %H:%M:%S %Z'),
-                    tournament['tournament']['participants_count'],
-                    tournament['tournament']['full_challonge_url'] if full_url else ''
-                ])
+                    tournament['tournament']['participants_count']
+                ]
+                if full_url:
+                    item.append(tournament['tournament']['full_challonge_url'])
+                filtered_tournaments.append(item)
     
     if json_output:
         print(json.dumps(filtered_tournaments, indent=2))
     elif short:
         print("\n".join(filtered_tournaments))
     elif filtered_tournaments:
-        headers = ["URL", "Titre", "Type de tournoi", "Date de création", "Nombre de participants"]
+        headers = ["url", "title", "tournament_type", "created_at", "participants_count"]
         if full_url:
-            headers.append("URL complète")
-        print(tabulate(filtered_tournaments, headers=headers, tablefmt="grid"))
+            headers.append("full_url")
+        print(tabulate(filtered_tournaments, headers=headers, tablefmt="fancy_grid"))
     else:
         print("Aucun tournoi trouvé correspondant aux critères spécifiés.")
 
@@ -272,7 +282,7 @@ def show_tournament(tournament_url, json_output=False, full_json=False):
     else:
         headers = ['Champ', 'Valeur']
         table_data = [[k, v] for k, v in details.items() if k != 'Participants']
-        print(tabulate(table_data, headers=headers, tablefmt="grid"))
+        print(tabulate(table_data, headers=headers, tablefmt="simple_outline"))
         
         print("\nParticipants:")
         for i, participant in enumerate(details['Participants'], 1):
@@ -293,6 +303,7 @@ def create_parser():
     list_parser.add_argument('--full_url', action='store_true', help="Ajouter l'URL complète en dernière colonne")
     list_parser.add_argument('--json', action='store_true', help="Sortie au format JSON")
     list_parser.add_argument('--full_json', action='store_true', help="Sortie JSON complète avec liste des participants")
+    list_parser.add_argument('--last', action='store_true', help="Retourner le JSON complet (API) du dernier tournoi créé (ou juste son URL si combiné avec --short)")
 
     # Commande : delete
     delete_parser = subparsers.add_parser('delete', help='Supprimer les tournois')
@@ -300,6 +311,14 @@ def create_parser():
     delete_group.add_argument('--urls', nargs='+', required=False, help="Liste des URLs des tournois à supprimer")
     delete_group.add_argument('--start_date', help="Date de début (YYYY-MM-DD) à partir de laquelle supprimer les tournois")
     delete_parser.add_argument('--end_date', required=False, help="Date de fin (YYYY-MM-DD) jusqu'à laquelle supprimer les tournois (optionnel)")
+    
+    # delete_parser = subparsers.add_parser('delete', help='Supprimer les tournois')
+    # delete_group = delete_parser.add_mutually_exclusive_group(required=True)
+    # delete_group.add_argument('--urls', nargs='+', required=False, help="Liste des URLs des tournois à supprimer")
+    # date_group = delete_group.add_argument_group();
+    # date_group.add_argument('--start_date', help="Date de début (YYYY-MM-DD) à partir de laquelle supprimer les tournois")
+    # date_group.add_argument('--end_date', required=False, help="Date de fin (YYYY-MM-DD) jusqu'à laquelle supprimer les tournois (optionnel)")
+
 
     # Commande : create_single
     create_single_parser = subparsers.add_parser('create_single', help='Créer un tournoi à élimination simple')
@@ -351,7 +370,7 @@ def main():
     if args.action == 'list':
         start_date = datetime.fromisoformat(args.start_date).date() if args.start_date else None
         end_date = datetime.fromisoformat(args.end_date).date() if args.end_date else None
-        list_tournaments(start_date, end_date, args.participants_count, args.short, args.full_url, args.json, args.full_json)
+        list_tournaments(start_date, end_date, args.participants_count, args.short, args.full_url, args.json, args.full_json, args.last)
     elif args.action == 'delete':
         if args.start_date:
             start_date = datetime.fromisoformat(args.start_date).date()

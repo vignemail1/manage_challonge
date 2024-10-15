@@ -16,9 +16,7 @@ API_KEY = os.getenv('CHALLONGE_API_KEY')
 
 BASE_URL = 'https://api.challonge.com/v1'
 
-paris_tz = pytz.timezone('Europe/Paris')
-
-
+TIMEZONE = pytz.timezone(os.getenv('TIMEZONE', 'Europe/Paris'))
 
 def make_request_with_retry(method, endpoint, data=None, params=None, max_retries=3, delay=5):
     for attempt in range(max_retries):
@@ -54,12 +52,24 @@ def make_request(method, endpoint, data=None, params=None):
 
 def delete_tournaments_from_date(date):
     tournaments = make_request('GET', 'tournaments')
+    deleted_count = 0
     for tournament in tournaments:
         created_at = datetime.fromisoformat(tournament['tournament']['created_at'].replace('Z', '+00:00'))
-        created_at = created_at.astimezone(paris_tz)
+        created_at = created_at.astimezone(TIMEZONE)
         if created_at.date() >= date:
             make_request('DELETE', f"tournaments/{tournament['tournament']['id']}")
-    print("Tournois supprimés avec succès.")
+            deleted_count += 1
+    print(f"{deleted_count} tournois supprimés avec succès.")
+
+def delete_tournaments_by_urls(urls):
+    deleted_count = 0
+    for tournament_url in urls:
+        try:
+            make_request('DELETE', f"tournaments/{tournament_url}")
+            deleted_count += 1
+        except requests.exceptions.HTTPError as e:
+            print(f"Erreur lors de la suppression du tournoi {tournament_url}: {e}")
+    print(f"{deleted_count} tournois supprimés avec succès.")
 
 
 def create_tournament(name, tournament_type):
@@ -103,29 +113,58 @@ def set_custom_round_labels(tournament_id):
     make_request('PUT', f"tournaments/{tournament_id}", data)
     print("Labels de tour personnalisés ajoutés.")
 
-def list_tournaments(date=None, participants_count=None):
+def list_tournaments(date=None, participants_count=None, short=False, full_url=False):
     tournaments = make_request('GET', 'tournaments')
     filtered_tournaments = []
     
     for tournament in tournaments:
         created_at_utc = datetime.fromisoformat(tournament['tournament']['created_at'].replace('Z', '+00:00'))
-        created_at_paris = created_at_utc.astimezone(paris_tz)
+        created_at_paris = created_at_utc.astimezone(TIMEZONE)
         
         if (date is None or created_at_paris.date() >= date) and \
            (participants_count is None or tournament['tournament']['participants_count'] == participants_count):
-            filtered_tournaments.append([
-                tournament['tournament']['name'],
-                tournament['tournament']['tournament_type'],
-                created_at_paris.strftime('%Y-%m-%d %H:%M:%S %Z'),
-                tournament['tournament']['participants_count']
-            ])
+            if short:
+                filtered_tournaments.append(tournament['tournament']['url'])
+            else:
+                tournament_data = [
+                    tournament['tournament']['url'],
+                    tournament['tournament']['name'],
+                    tournament['tournament']['tournament_type'],
+                    created_at_paris.strftime('%Y-%m-%d %H:%M:%S %Z'),
+                    tournament['tournament']['participants_count']
+                ]
+                if full_url:
+                    tournament_data.append(tournament['tournament']['full_challonge_url'])
+                filtered_tournaments.append(tournament_data)
     
-    if filtered_tournaments:
-        headers = ["Titre", "Type de tournoi", "Date de création (Paris)", "Nombre de participants"]
+    if short:
+        print("\n".join(filtered_tournaments))
+    elif filtered_tournaments:
+        headers = ["URL", "Titre", "Type de tournoi", "Date de création", "Nombre de participants"]
+        if full_url:
+            headers.append("URL complète")
         print(tabulate(filtered_tournaments, headers=headers, tablefmt="grid"))
     else:
         print("Aucun tournoi trouvé correspondant aux critères spécifiés.")
 
+def toggle_tournament_type(tournament_url):
+    tournament = make_request('GET', f"tournaments/{tournament_url}")
+    current_type = tournament['tournament']['tournament_type']
+    new_type = 'double elimination' if current_type == 'single elimination' else 'single elimination'
+    
+    data = {
+        'tournament': {
+            'tournament_type': new_type
+        }
+    }
+    
+    make_request('PUT', f"tournaments/{tournament_url}", data)
+    print(f"Le type du tournoi a été changé de {current_type} à {new_type}.")
+
+def randomize_participants(tournament_url):
+    make_request('POST', f"tournaments/{tournament_url}/participants/randomize")
+    print("Les participants du tournoi ont été mélangés aléatoirement.")
+    
 def create_parser():
     parser = argparse.ArgumentParser(description="Gestion des tournois Challonge")
     subparsers = parser.add_subparsers(dest='action', required=True, help='Action à effectuer')
@@ -134,10 +173,14 @@ def create_parser():
     list_parser = subparsers.add_parser('list', help='Lister les tournois')
     list_parser.add_argument('--date', help="Date (YYYY-MM-DD) à partir de laquelle lister les tournois")
     list_parser.add_argument('--participants_count', type=int, help="Filtrer par nombre de participants")
+    list_parser.add_argument('--short', action='store_true', help="Afficher uniquement les URLs des tournois")
+    list_parser.add_argument('--fullurl', action='store_true', help="Ajouter l'URL complète en dernière colonne")
 
     # Commande : delete
     delete_parser = subparsers.add_parser('delete', help='Supprimer les tournois')
-    delete_parser.add_argument('--date', required=True, help="Date (YYYY-MM-DD) à partir de laquelle supprimer les tournois")
+    delete_group = delete_parser.add_mutually_exclusive_group(required=True)
+    delete_group.add_argument('--date', help="Date (YYYY-MM-DD) à partir de laquelle supprimer les tournois")
+    delete_group.add_argument('--urls', nargs='+', help="Liste des URLs des tournois à supprimer")
 
     # Commande : create_single
     create_single_parser = subparsers.add_parser('create_single', help='Créer un tournoi à élimination simple')
@@ -155,6 +198,14 @@ def create_parser():
     # Commande : remove_participants
     remove_participants_parser = subparsers.add_parser('remove_participants', help='Supprimer tous les participants d\'un tournoi')
     remove_participants_parser.add_argument('--tournament_id', required=True, help="ID du tournoi")
+    
+    # Commande : toggle_type
+    toggle_type_parser = subparsers.add_parser('toggle_type', help='Changer le type du tournoi (simple/double élimination)')
+    toggle_type_parser.add_argument('--url', required=True, help="URL du tournoi")
+
+    # Commande : randomize
+    randomize_parser = subparsers.add_parser('randomize', help='Mélanger aléatoirement les participants')
+    randomize_parser.add_argument('--url', required=True, help="URL du tournoi")
 
     return parser
 
@@ -164,10 +215,13 @@ def main():
 
     if args.action == 'list':
         date = datetime.fromisoformat(args.date).date() if args.date else None
-        list_tournaments(date, args.participants_count)
+        list_tournaments(date, args.participants_count, args.short, args.fullurl)
     elif args.action == 'delete':
-        date = datetime.fromisoformat(args.date).date()
-        delete_tournaments_from_date(date)
+        if args.date:
+            date = datetime.fromisoformat(args.date).date()
+            delete_tournaments_from_date(date)
+        elif args.urls:
+            delete_tournaments_by_urls(args.urls)
     elif args.action in ['create_single', 'create_double']:
         tournament_type = 'single elimination' if args.action == 'create_single' else 'double elimination'
         tournament_id = create_tournament(args.name, tournament_type)
@@ -176,6 +230,10 @@ def main():
         add_participants(args.tournament_id, args.participants)
     elif args.action == 'remove_participants':
         remove_all_participants(args.tournament_id)
+    elif args.action == 'toggle_type':
+        toggle_tournament_type(args.url)
+    elif args.action == 'randomize':
+        randomize_participants(args.url)
 
 if __name__ == "__main__":
     main()

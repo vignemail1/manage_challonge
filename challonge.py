@@ -204,7 +204,7 @@ def create_parser():
     list_parser.add_argument('--date', help="Date (YYYY-MM-DD) à partir de laquelle lister les tournois")
     list_parser.add_argument('--participants_count', type=int, help="Filtrer par nombre de participants")
     list_parser.add_argument('--short', action='store_true', help="Afficher uniquement les URLs des tournois")
-    list_parser.add_argument('--fullurl', action='store_true', help="Ajouter l'URL complète en dernière colonne")
+    list_parser.add_argument('--full_url', action='store_true', help="Ajouter l'URL complète en dernière colonne")
     list_parser.add_argument('--json', action='store_true', help="Sortie au format JSON")
     list_parser.add_argument('--full_json', action='store_true', help="Sortie JSON complète avec liste des participants")
 
@@ -254,7 +254,7 @@ def main():
 
     if args.action == 'list':
         date = datetime.fromisoformat(args.date).date() if args.date else None
-        list_tournaments(date, args.participants_count, args.short, args.fullurl, args.json, args.full_json)
+        list_tournaments(date, args.participants_count, args.short, args.full_url, args.json, args.full_json)
     elif args.action == 'delete':
         if args.date:
             date = datetime.fromisoformat(args.date).date()

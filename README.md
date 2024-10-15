@@ -91,7 +91,7 @@ python challonge.py --help
 ### Lister les tournois
 
 ```shell
-# challonge.py list [-h] [--date DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--fullurl] [--json [--full_json]]
+# challonge.py list [-h] [--date DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--full_url] [--json [--full_json]]
 
 # Lister les tournois
 python challonge.py list
@@ -174,7 +174,7 @@ python challonge.py list --json --full_json
 
 ```shell
 # Lister les tournois
-python challonge.py list --fullurl
+python challonge.py list --full_url
 ```
 
 ```text

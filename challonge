@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import os
 import sys
@@ -128,20 +128,50 @@ def create_tournament(name, tournament_type, game_name='Call of Duty: Warzone', 
         
     return response['tournament']['url']
 
-def add_participants(tournament_url, participants):
-    data = {'participants': [{'name': p} for p in participants]}
-    try:
-        make_request('POST', f"tournaments/{tournament_url}/participants/bulk_add", data)
-        print("Participants ajoutés avec succès.")
-    except requests.HTTPError as e:
-        print(f"Erreur d'import, possible qu'il y ait des doublons dans l'import ou avec les participants existant")
-        print(json.dumps(data, indent=2))
+def add_participants(tournament_url, participants=None, generate_participants=0):
+    if generate_participants > 0:
+        generated_participants = [f"Team{i:03d}" for i in range(1, generate_participants + 1)]
+        participants = generated_participants if participants is None else participants + generated_participants
 
-def remove_all_participants(tournament_url):
-    participants = make_request('GET', f"tournaments/{tournament_url}/participants")
+    if participants:
+        data = {'participants': [{'name': p} for p in participants]}
+        try:
+            make_request('POST', f"tournaments/{tournament_url}/participants/bulk_add", data)
+            print(f"{len(participants)} participants ajoutés avec succès.")
+        except requests.HTTPError as e:
+            print(f"Erreur d'import, possible qu'il y ait des doublons dans l'import ou avec les participants existants")
+            print(json.dumps(data, indent=2))
+    else:
+        print("Aucun participant à ajouter.")
+
+def remove_all_participants(url=None, last=False, accept=False):
+    if last:
+        url = get_last_tournament()
+        if not url:
+            print("Aucun tournoi trouvé.")
+            return
+        
+        show_tournament(url)
+        
+        if not accept:
+            print("Utilisez l'option --accept pour confirmer la suppression des participants.")
+            return
+    
+    if not url:
+        print("URL du tournoi non spécifiée.")
+        return
+    
+    participants = make_request('GET', f"tournaments/{url}/participants")
+    
+    if not accept:
+        print(f"Cela supprimera {len(participants)} participants du tournoi {url}.")
+        print("Utilisez l'option --accept pour confirmer la suppression.")
+        return
+    
     for participant in participants:
-        make_request('DELETE', f"tournaments/{tournament_url}/participants/{participant['participant']['id']}")
-    print("Tous les participants ont été supprimés.")
+        make_request('DELETE', f"tournaments/{url}/participants/{participant['participant']['id']}")
+    
+    print(f"Tous les participants ({len(participants)}) ont été supprimés du tournoi {url}.")
 
 def set_custom_round_labels(tournament_url):
     data = {
@@ -248,7 +278,12 @@ def generate_and_add_participants(tournament_url, count):
     data = {'participants': [{'name': p} for p in participants]}
     make_request('POST', f"tournaments/{tournament_url}/participants/bulk_add", data)
     print(f"{count} participants générés et ajoutés au tournoi.")
-    
+
+def get_last_tournament():
+    tournaments = make_request('GET', 'tournaments')
+    tournaments.sort(key=lambda x: x["tournament"]["created_at"], reverse=True)
+    return tournaments[0]['tournament']['url'] if tournaments else None
+
 def show_tournament(tournament_url, json_output=False, full_json=False):
     tournament = make_request('GET', f"tournaments/{tournament_url}")
     participants = make_request('GET', f"tournaments/{tournament_url}/participants")
@@ -428,12 +463,16 @@ def create_parser():
     # Commande : add_participants
     add_participants_parser = subparsers.add_parser('add_participants', help='Ajouter des participants à un tournoi')
     add_participants_parser.add_argument('--url', required=True, help="url du tournoi")
-    add_participants_parser.add_argument('--participants', nargs='+', required=False, help="Liste des participants")
+    add_participants_parser.add_argument('--participants', nargs='*', required=False, help="Liste des participants")
     add_participants_parser.add_argument('--import-gsheet', action='store_true', help="Importer la liste des participants depuis un Google Sheet")
+    add_participants_parser.add_argument('--generate_participants', type=int, default=0, help='Nombre de participants à générer et ajouter automatiquement')
 
     # Commande : remove_participants
     remove_participants_parser = subparsers.add_parser('remove_participants', help='Supprimer tous les participants d\'un tournoi')
-    remove_participants_parser.add_argument('--url', required=True, help="url du tournoi")
+    remove_participants_subparser = remove_participants_parser.add_mutually_exclusive_group(required=True)
+    remove_participants_subparser.add_argument('--url', help="url du tournoi")
+    remove_participants_subparser.add_argument('--last', action='store_true', help='Utiliser le dernier tournoi créé')
+    remove_participants_parser.add_argument('--accept', action='store_true', help='Confirmer la suppression des participants')
     
     # Commande : toggle_type
     toggle_type_parser = subparsers.add_parser('toggle_type', help='Changer le type du tournoi (simple/double élimination)')
@@ -480,18 +519,19 @@ def main():
             set_custom_round_labels(tournament_url)
     elif args.action == 'add_participants':
         participants = args.participants if args.participants else []
+        generate_participants = args.generate_participants
         
         if args.import_gsheet:
             gsheet_participants = import_participants_from_gsheet()
             participants.extend(gsheet_participants)
 
-        if not participants:
+        if not participants and generate_completion_script == 0 :
             print("Aucun participant spécifié.")
             return
         
-        add_participants(args.url, participants)
+        add_participants(args.url, participants, generate_participants)
     elif args.action == 'remove_participants':
-        remove_all_participants(args.url)
+        remove_all_participants(url=args.url, last=args.last, accept=args.accept)
     elif args.action == 'toggle_type':
         toggle_tournament_type(args.url)
     elif args.action == 'randomize':

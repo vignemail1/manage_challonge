@@ -160,7 +160,7 @@ python challonge.py --help
 ### Lister les tournois
 
 ```shell
-# usage: challonge.py list [-h] [--start_date START_DATE] [--end_date END_DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--full_url] [--json] [--full_json]
+# usage: challonge.py list [-h] [--start_date START_DATE] [--end_date END_DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--full_url] [--json] [--full_json] [--last]
 
 # Lister les tournois
 python challonge.py list

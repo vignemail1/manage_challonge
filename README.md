@@ -147,15 +147,15 @@ python challonge.py list --json --full_json
     "participants_count": 3,
     "participants": [
       {
-        "name": "Unreal x Marco",
+        "name": "Player1 x Player2",
         "seed": 1
       },
       {
-        "name": "Druide x Klarika",
+        "name": "Player3 x Player3",
         "seed": 2
       },
       {
-        "name": "vignemail1 x Hope",
+        "name": "Player5 x Player6",
         "seed": 3
       }
     ]

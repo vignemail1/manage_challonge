@@ -16,7 +16,7 @@ Avec ce script vous pouvez facilement envisager d'automatiser votre gestion de t
 
 ## Prérequis
 
-- Python 3.8 ou supérieur
+- Python 3.8 ou supérieur (Python 3.12 recommandé)
 - pipenv
 
 ## Installation de l'environnement python/pipenv
@@ -151,32 +151,37 @@ Voilà, vous avez créé un accès en lecture à votre Google Sheet via API pour
 
 Exécutez le script avec la commande souhaitée.
 
+Avant toute exécution, il faut :
+
+- soit se mettre dans l'environnement pipenv créé avec `pipenv shell` depuis le dossier du projet pour lancer directement des commandes `./challonge <command> [options]`
+- soit préfixer par `pipenv run` (méthode ici documentée et recommandée surtout pour des appels depuis d'autres programmes)
+
 Pour voir toutes les commandes disponibles :
 
 ```shell
-python challonge.py --help
+pipenv run challonge --help
 ```
 
 ### Lister les tournois
 
 ```shell
-# usage: challonge.py list [-h] [--start_date START_DATE] [--end_date END_DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--full_url] [--json] [--full_json] [--last]
+# usage: challonge list [-h] [--start_date START_DATE] [--end_date END_DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--full_url] [--json] [--full_json] [--last]
 
 # Lister les tournois
-python challonge.py list
+pipenv run challonge list
 ```
 
-```text
-+----------+---------+--------------------+--------------------------+--------------------------+
-| URL      | Titre   | Type de tournoi    | Date de création         |   Nombre de participants |
-+==========+=========+====================+==========================+==========================+
-| bbkdcbam | Test 01 | single elimination | 2024-10-10 14:37:33 CEST |                        3 |
-+----------+---------+--------------------+--------------------------+--------------------------+
-```
+> ```text
+> +----------+---------+--------------------+--------------------------+--------------------------+
+> | URL      | Titre   | Type de tournoi    | Date de création         |   Nombre de participants |
+> +==========+=========+====================+==========================+==========================+
+> | bbkdcbam | Test 01 | single elimination | 2024-10-10 14:37:33 CEST |                        3 |
+> +----------+---------+--------------------+--------------------------+--------------------------+
+> ```
 
 ```shell
 # Liste les tournois au format JSON
-python challonge.py list --json
+pipenv run challonge list --json
 ```
 
 > ```json
@@ -202,7 +207,7 @@ python challonge.py list --json
 
 ```shell
 # Liste les tournois au format JSON
-python challonge.py list --json --full_json
+pipenv run challonge list --json --full_json
 ```
 
 > ```json
@@ -243,20 +248,34 @@ python challonge.py list --json --full_json
 
 ```shell
 # Lister les tournois
-python challonge.py list --full_url
+pipenv run challonge list --full_url
 ```
 
 > ```text
-> +----------+---------+--------------------+--------------------------+--------------------------> +--------------------------------+
-> | URL      | Titre   | Type de tournoi    | Date de création         |   Nombre de participants | URL > complète                   |
-> +==========+=========+====================+==========================+==========================> +================================+
-> | bbkdcbam | Test 01 | single elimination | 2024-10-10 14:37:33 CEST |                        3 | https://challonge.com/bbkdcbam   |
-> +----------+---------+--------------------+--------------------------+--------------------------> +--------------------------------+
+> ╒══════════╤═════════╤════════════════════╤══════════════════════════╤══════════════════════╤════════════════════════════════╕
+> │ url      │ title   │ tournament_type    │ created_at               │   participants_count │ full_url                       │
+> ╞══════════╪═════════╪════════════════════╪══════════════════════════╪══════════════════════╪════════════════════════════════╡
+> │ sm52p3gu │ double  │ double elimination │ 2024-10-12 08:53:33 CEST │                    0 │ https://challonge.com/sm52p3gu │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┼────────────────────────────────┤
+> │ 3wz3067p │ double  │ double elimination │ 2024-10-12 08:53:31 CEST │                    0 │ https://challonge.com/3wz3067p │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┼────────────────────────────────┤
+> │ zqtm4ysb │ double  │ double elimination │ 2024-10-12 08:53:29 CEST │                    0 │ https://challonge.com/zqtm4ysb │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┼────────────────────────────────┤
+> │ b390sf18 │ double  │ double elimination │ 2024-10-12 08:53:26 CEST │                    0 │ https://challonge.com/b390sf18 │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┼────────────────────────────────┤
+> │ gb3fmyy9 │ double  │ double elimination │ 2024-10-12 08:53:24 CEST │                    0 │ https://challonge.com/gb3fmyy9 │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┼────────────────────────────────┤
+> │ jirous70 │ double  │ double elimination │ 2024-10-12 08:53:23 CEST │                    0 │ https://challonge.com/jirous70 │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┼────────────────────────────────┤
+> │ k0fkklld │ double  │ double elimination │ 2024-10-12 08:38:29 CEST │                    0 │ https://challonge.com/k0fkklld │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┼────────────────────────────────┤
+> │ gp527d34 │ test    │ single elimination │ 2024-10-11 22:21:44 CEST │                    0 │ https://challonge.com/gp527d34 │
+> ╘══════════╧═════════╧════════════════════╧══════════════════════════╧══════════════════════╧════════════════════════════════╛
 > ```
 
 ```shell
 # Lister les tournois depuis une date
-python challonge.py list --start_date 2024-09-01
+pipenv run challonge list --start_date 2024-09-01
 ```
 
 > ```text
@@ -268,7 +287,7 @@ python challonge.py list --start_date 2024-09-01
 > ```
 
 ```shell
-python challonge.py list --short --start_date 2024-09-01
+pipenv run challonge list --short --start_date 2024-09-01
 ```
 
 > ```text
@@ -278,26 +297,26 @@ python challonge.py list --short --start_date 2024-09-01
 ### Supprimer les tournois
 
 ```shell
-# usage: challonge.py delete [-h] (--urls URLS [URLS ...] | --start_date START_DATE) [--end_date END_DATE]
+# usage: challonge delete [-h] (--urls URLS [URLS ...] | --start_date START_DATE) [--end_date END_DATE]
 
 # Tous les tournois à partir d'une date
-python challonge.py delete --start_date 2024-09-01
+pipenv run challonge delete --start_date 2024-09-01
 ```
 
 > ```text
-> 2 tournois supprimés avec succès.
+> 8 tournois supprimés avec succès.
 > ```
 
 ```shell
 # Les tournois spécifiés par leur fin d'url
-python challonge.py delete --urls bbkdcbam
+pipenv run challonge delete --urls bbkdcbam
 ```
 
 ### Créer un tournoi à élimination simple
 
 ```shell
-# usage: challonge.py create_single [-h] --name NAME [--generate_participants GENERATE_PARTICIPANTS]
-python challonge.py create_single --name "Switcharoo"
+# usage: challonge create_single [-h] --name NAME [--generate_participants GENERATE_PARTICIPANTS]
+pipenv run challonge create_single --name "Switcharoo"
 ```
 
 > ```text
@@ -306,7 +325,7 @@ python challonge.py create_single --name "Switcharoo"
 > ```
 
 ```shell
-python challonge.py create_single --name "Test 12 teams" --generate_participants 12
+pipenv run challonge create_single --name "Test 12 teams" --generate_participants 12
 ```
 
 > ```text
@@ -317,21 +336,21 @@ python challonge.py create_single --name "Test 12 teams" --generate_participants
 ### Créer un tournoi à double élimination
 
 ```shell
-# usage: challonge.py create_double [-h] --name NAME [--generate_participants GENERATE_PARTICIPANTS]
-python challonge.py create_double --name "Switcharoo"
-python challonge.py create_double --name "Test 8 teams" --generate_participants 8
+# usage: challonge create_double [-h] --name NAME [--generate_participants GENERATE_PARTICIPANTS]
+pipenv run challonge create_double --name "Switcharoo"
+pipenv run challonge create_double --name "Test 8 teams" --generate_participants 8
 ```
 
 ### Ajouter des participants à un tournoi
 
 ```shell
-# usage: challonge.py add_participants [-h] --url TOURNAMENT_URL [--participants PARTICIPANTS [PARTICIPANTS ...]] [--import-gsheet]
+# usage: challonge add_participants [-h] --url TOURNAMENT_URL [--participants PARTICIPANTS [PARTICIPANTS ...]] [--import-gsheet]
 
 ## Ajout manuel des participants
-python challonge.py add_participants --url bbkdcbam --participants "player1 x player2" "player3 x player4" "player5 x player6" "player7 x player8"
+pipenv run challonge add_participants --url bbkdcbam --participants "player1 x player2" "player3 x player4" "player5 x player6" "player7 x player8"
 
 ## Ajout automatique depuis le google Sheet référencé
-python challonge.py add_participants --url bbkdcbam --import-gsheet
+pipenv run challonge add_participants --url bbkdcbam --import-gsheet
 ```
 
 > ```text
@@ -341,8 +360,8 @@ python challonge.py add_participants --url bbkdcbam --import-gsheet
 ### Supprimer tous les participants d'un tournoi
 
 ```shell
-# usage: challonge.py remove_participants [-h] --url TOURNAMENT_ID
-python challonge.py remove_participants --url bbkdcba
+# usage: challonge remove_participants [-h] --url TOURNAMENT_ID
+pipenv run challonge remove_participants --url bbkdcba
 ```
 
 > ```text
@@ -352,8 +371,8 @@ python challonge.py remove_participants --url bbkdcba
 ### Changer le type d'elimination d'un tournoi
 
 ```shell
-# usage: challonge.py toggle_type [-h] --url URL
-python challonge.py toggle_type --url bbkdcbam
+# usage: challonge toggle_type [-h] --url URL
+pipenv run challonge toggle_type --url bbkdcbam
 ```
 
 > ```text
@@ -361,7 +380,7 @@ python challonge.py toggle_type --url bbkdcbam
 > ```
 
 ```shell
-python challonge.py toggle_type --url bbkdcbam
+pipenv run challonge toggle_type --url bbkdcbam
 ```
 
 > ```text
@@ -371,8 +390,8 @@ python challonge.py toggle_type --url bbkdcbam
 ### Mélanger la liste des participants
 
 ```shell
-# usage: challonge.py randomize [-h] --url URL
-python challonge.py randomize --url bbkdcbam
+# usage: challonge randomize [-h] --url URL
+pipenv run challonge randomize --url bbkdcbam
 ```
 
 > ```text

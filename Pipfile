@@ -15,3 +15,7 @@ google-auth = "*"
 
 [requires]
 python_version = "3.12"
+
+[scripts]
+
+challonge = "python3 ./challonge"

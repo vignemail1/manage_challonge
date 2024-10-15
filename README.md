@@ -2,6 +2,18 @@
 
 Ce script Python permet de gérer les tournois sur Challonge via leur API.
 
+Avec ce script vous pouvez :
+
+- créer un tournoi en single (winner only) ou double elimination (winner + loser brackets)
+- ajouter des participants en paramètre ou depuis une plage d'une feuille Google Sheet
+- supprimer tous les participants d'un tournoi
+- supprimer des tournois
+- lister vos tournois
+- mélanger la liste des participants d'un tournoi
+- voir le détail d'un tournoi
+
+Avec ce script vous pouvez facilement envisager d'automatiser votre gestion de tournois jusqu'à programmer des touches de Stream Deck.
+
 ## Prérequis
 
 - Python 3.6 ou supérieur
@@ -63,6 +75,22 @@ Ce script Python permet de gérer les tournois sur Challonge via leur API.
 2. Allez dans les paramètres de votre compte
 3. Dans la section "Developer API", copiez la Clé API (v1)
 
+## Création d'un accès pour Google Sheeet (fonction --import-gsheet)
+
+1. Enable the Google Sheets API:
+    - Go to the [Google Cloud Console](https://console.cloud.google.com/).
+    - Create a new project or select an existing one.
+    - Navigate to "APIs & Services" > "Library".
+    - Search for "Google Sheets API" and enable it.
+2. Create Credentials:
+   - Go to "APIs & Services" > "Credentials".
+   - Click "Create credentials" and choose "Service account".
+   - Fill in the required details and create the service account.
+   - Once created, go to the service account and create a key in JSON format. Download this key.
+3. Partagez votre Google Sheet:
+    - Ouvrir Google Sheet.
+    - Cliquez sur "Partage" et ajoutez l'email associé au compte de service nouvellement créé (vous pouvez le retrouver dans le fichier JSON) avec au moins le rôle Lecteur.
+
 ## Configuration du script
 
 1. Créez un fichier `.env` dans le même répertoire que le script
@@ -91,7 +119,7 @@ python challonge.py --help
 ### Lister les tournois
 
 ```shell
-# challonge.py list [-h] [--date DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--full_url] [--json [--full_json]]
+# usage: challonge.py list [-h] [--start_date START_DATE] [--end_date END_DATE] [--participants_count PARTICIPANTS_COUNT] [--short] [--full_url] [--json] [--full_json]
 
 # Lister les tournois
 python challonge.py list
@@ -151,7 +179,7 @@ python challonge.py list --json --full_json
         "seed": 1
       },
       {
-        "name": "Player3 x Player3",
+        "name": "Player3 x Player4",
         "seed": 2
       },
       {
@@ -187,7 +215,7 @@ python challonge.py list --full_url
 
 ```shell
 # Lister les tournois depuis une date
-python challonge.py list --date 2024-09-01
+python challonge.py list --start_date 2024-09-01
 ```
 
 ```text
@@ -199,7 +227,7 @@ python challonge.py list --date 2024-09-01
 ```
 
 ```shell
-python challonge.py list --short --date 2024-09-01
+python challonge.py list --short --start_date 2024-09-01
 ```
 
 ```text
@@ -209,10 +237,10 @@ bbkdcbam
 ### Supprimer les tournois
 
 ```shell
-# usage: challonge.py delete [-h] (--date DATE | --urls URLS [URLS ...])
+# usage: challonge.py delete [-h] (--start_date DATE | --urls URLS [URLS ...])
 
 # Tous les tournois à partir d'une date
-python challonge.py delete --date 2024-09-01
+python challonge.py delete --start_date 2024-09-01
 ```
 
 ```text
@@ -256,8 +284,13 @@ python challonge.py create_double --name "Test 8 teams" --generate_participants 
 ### Ajouter des participants à un tournoi
 
 ```shell
-# usage: challonge.py add_participants [-h] --tournament_id TOURNAMENT_ID --participants PARTICIPANTS [PARTICIPANTS ...]
-python challonge.py add_participants --tournament_id bbkdcbam --participants "player1 x player2" "player3 x player4" "player5 x player6" "player7 x player8"
+# usage: challonge.py add_participants [-h] --url TOURNAMENT_URL [--participants PARTICIPANTS [PARTICIPANTS ...]] [--import-gsheet]
+
+## Ajout manuel des participants
+python challonge.py add_participants --url bbkdcbam --participants "player1 x player2" "player3 x player4" "player5 x player6" "player7 x player8"
+
+## Ajout automatique depuis le google Sheet référencé
+python challonge.py add_participants --url bbkdcbam --import-gsheet
 ```
 
 ```text
@@ -267,8 +300,8 @@ Participants ajoutés avec succès.
 ### Supprimer tous les participants d'un tournoi
 
 ```shell
-# usage: challonge.py remove_participants [-h] --tournament_id TOURNAMENT_ID
-python challonge.py remove_participants --tournament_id bbkdcba
+# usage: challonge.py remove_participants [-h] --url TOURNAMENT_ID
+python challonge.py remove_participants --url bbkdcba
 ```
 
 ```text

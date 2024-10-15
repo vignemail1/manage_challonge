@@ -346,13 +346,16 @@ pipenv run challonge create_double --name "Test 8 teams" --generate_participants
 ### Ajouter des participants à un tournoi
 
 ```shell
-# usage: challonge add_participants [-h] --url TOURNAMENT_URL [--participants PARTICIPANTS [PARTICIPANTS ...]] [--import-gsheet]
+# usage: challonge add_participants [-h] --url URL [--participants [PARTICIPANTS ...]] [--import-gsheet] [--generate_participants GENERATE_PARTICIPANTS]
 
 ## Ajout manuel des participants
 pipenv run challonge add_participants --url bbkdcbam --participants "player1 x player2" "player3 x player4" "player5 x player6" "player7 x player8"
 
 ## Ajout automatique depuis le google Sheet référencé
 pipenv run challonge add_participants --url bbkdcbam --import-gsheet
+
+# Ajout de 12 équipes au format TeamXXX
+pipenv run challonge add_participants --url yg1rl9df --generate_participants 12
 ```
 
 > ```text
@@ -362,12 +365,82 @@ pipenv run challonge add_participants --url bbkdcbam --import-gsheet
 ### Supprimer tous les participants d'un tournoi
 
 ```shell
-# usage: challonge remove_participants [-h] --url TOURNAMENT_URL
+# usage: challonge remove_participants [-h] (--url URL | --last) [--accept]
 pipenv run challonge remove_participants --url bbkdcba
 ```
 
 > ```text
 > Tous les participants ont été supprimés.
+> ```
+
+```shell
+# ou bien
+pipenv run challonge remove_participants --last
+```
+
+> ```text
+> ┌────────────────────────┬────────────────────────────────┐
+> │ Champ                  │ Valeur                         │
+> ├────────────────────────┼────────────────────────────────┤
+> │ URL                    │ yg1rl9df                       │
+> │ Nom                    │ test add                       │
+> │ Type                   │ single elimination             │
+> │ Jeu                    │ Call of Duty: Warzone          │
+> │ Date de création       │ 2024-10-15 14:37:50 CEST       │
+> │ Nombre de participants │ 12                             │
+> │ État                   │ pending                        │
+> │ URL complète           │ https://challonge.com/yg1rl9df │
+> └────────────────────────┴────────────────────────────────┘
+> 
+> Participants:
+> 1. Team001
+> 2. Team002
+> 3. Team003
+> 4. Team004
+> 5. Team005
+> 6. Team006
+> 7. Team007
+> 8. Team008
+> 9. Team009
+> 10. Team010
+> 11. Team011
+> 12. Team012
+> Utilisez l'option --accept pour confirmer la suppression des participants.
+> ```
+
+```shell
+# ou bien
+pipenv run challonge remove_participants --last --accept
+```
+
+> ```text
+> ┌────────────────────────┬────────────────────────────────┐
+> │ Champ                  │ Valeur                         │
+> ├────────────────────────┼────────────────────────────────┤
+> │ URL                    │ yg1rl9df                       │
+> │ Nom                    │ test add                       │
+> │ Type                   │ single elimination             │
+> │ Jeu                    │ Call of Duty: Warzone          │
+> │ Date de création       │ 2024-10-15 14:37:50 CEST       │
+> │ Nombre de participants │ 12                             │
+> │ État                   │ pending                        │
+> │ URL complète           │ https://challonge.com/yg1rl9df │
+> └────────────────────────┴────────────────────────────────┘
+> 
+> Participants:
+> 1. Team001
+> 2. Team002
+> 3. Team003
+> 4. Team004
+> 5. Team005
+> 6. Team006
+> 7. Team007
+> 8. Team008
+> 9. Team009
+> 10. Team010
+> 11. Team011
+> 12. Team012
+> Tous les participants (12) ont été supprimés du tournoi yg1rl9df.
 > ```
 
 ### Changer le type d'elimination d'un tournoi

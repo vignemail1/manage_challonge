@@ -263,8 +263,8 @@ def main():
             delete_tournaments_by_urls(args.urls)
     elif args.action in ['create_single', 'create_double']:
         tournament_type = 'single elimination' if args.action == 'create_single' else 'double elimination'
-        tournament_id = create_tournament(args.name, tournament_type)
-        set_custom_round_labels(tournament_id)
+        tournament_url = create_tournament(args.name, tournament_type, args.generate_participants)
+        set_custom_round_labels(tournament_url)
     elif args.action == 'add_participants':
         add_participants(args.tournament_id, args.participants)
     elif args.action == 'remove_participants':

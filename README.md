@@ -172,11 +172,13 @@ pipenv run challonge list
 ```
 
 > ```text
-> +----------+---------+--------------------+--------------------------+--------------------------+
-> | URL      | Titre   | Type de tournoi    | Date de création         |   Nombre de participants |
-> +==========+=========+====================+==========================+==========================+
-> | bbkdcbam | Test 01 | single elimination | 2024-10-10 14:37:33 CEST |                        3 |
-> +----------+---------+--------------------+--------------------------+--------------------------+
+> ╒══════════╤═════════╤════════════════════╤══════════════════════════╤══════════════════════╕
+> │ url      │ title   │ tournament_type    │ created_at               │   participants_count │
+> ╞══════════╪═════════╪════════════════════╪══════════════════════════╪══════════════════════╡
+> │ pl888gdr │ double  │ double elimination │ 2024-10-12 14:25:26 CEST │                    0 │
+> ├──────────┼─────────┼────────────────────┼──────────────────────────┼──────────────────────┤
+> │ sf901z3a │ single  │ single elimination │ 2024-10-12 14:21:30 CEST │                    0 │
+> ╘══════════╧═════════╧════════════════════╧══════════════════════════╧══════════════════════╛
 > ```
 
 ```shell
@@ -279,11 +281,11 @@ pipenv run challonge list --start_date 2024-09-01
 ```
 
 > ```text
-> +---------+--------------------+----------------------------+--------------------------+
-> | Titre   | Type de tournoi    | Date de création (Paris)   |   Nombre de participants |
-> +=========+====================+============================+==========================+
-> | Test 01 | single elimination | 2024-10-10 14:37:33 CEST   |                        0 |
-> +---------+--------------------+----------------------------+--------------------------+
+> ╒══════════╤═════════╤════════════════════╤══════════════════════════╤══════════════════════╕
+> │ url      │ title   │ tournament_type    │ created_at               │   participants_count │
+> ╞══════════╪═════════╪════════════════════╪══════════════════════════╪══════════════════════╡
+> │ sf901z3a │ single  │ single elimination │ 2024-10-12 14:21:30 CEST │                    0 │
+> ╘══════════╧═════════╧════════════════════╧══════════════════════════╧══════════════════════╛
 > ```
 
 ```shell
@@ -360,7 +362,7 @@ pipenv run challonge add_participants --url bbkdcbam --import-gsheet
 ### Supprimer tous les participants d'un tournoi
 
 ```shell
-# usage: challonge remove_participants [-h] --url TOURNAMENT_ID
+# usage: challonge remove_participants [-h] --url TOURNAMENT_URL
 pipenv run challonge remove_participants --url bbkdcba
 ```
 
